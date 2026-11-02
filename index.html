@@ -7,16 +7,15 @@
   
   <!-- Web App Manifest para instalación PWA -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#121212">
+  <meta name="theme-color" content="#0d0f12">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Mi Tele">
 
-  <!-- Hls.js para reproducción confiable de streams en vivo .m3u8 -->
+  <!-- Hls.js para reproducción de streams seguros HTTPS .m3u8 -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
 
   <style>
-    /* Reset & Tipografía adaptada para máxima legibilidad */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -36,7 +35,7 @@
       flex-direction: column;
     }
 
-    /* VISTA DE CANALES (HOME) */
+    /* VISTA DE CANALES (GRILLA VERTICAL PARA TABLET) */
     #view-home {
       display: flex;
       flex-direction: column;
@@ -81,8 +80,7 @@
       50% { opacity: 0.6; }
     }
 
-    /* Cuadrícula ergonómica para temblor esencial */
-    /* En vertical (WhatsApp): 2 columnas x 3 filas bien altas sin scroll */
+    /* Grilla de 2 columnas en vertical (estilo WhatsApp) */
     .channels-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -91,7 +89,7 @@
       flex: 1;
     }
 
-    /* En horizontal: 3 columnas x 2 filas */
+    /* En horizontal: 3 columnas */
     @media (orientation: landscape) {
       .channels-grid {
         grid-template-columns: repeat(3, 1fr);
@@ -102,7 +100,7 @@
       }
     }
 
-    /* Tarjetas gigantes de canal (Touch Target > 140px) */
+    /* Tarjetas gigantes de canal (Mínimo 140px alto para evitar errores con temblor) */
     .channel-card {
       position: relative;
       display: flex;
@@ -116,23 +114,22 @@
       border: 4px solid transparent;
       transition: transform 0.12s ease, border-color 0.12s ease, filter 0.12s ease;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-      min-height: 140px;
+      min-height: 145px;
     }
 
-    /* Estado activo claro al pulsar */
     .channel-card:active, .channel-card.is-pressed {
       transform: scale(0.96);
       border-color: #ffffff;
-      filter: brightness(1.15);
+      filter: brightness(1.2);
     }
 
     .channel-card .logo-container {
-      width: 90px;
-      height: 90px;
+      width: 85px;
+      height: 85px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
     }
 
@@ -142,7 +139,7 @@
     }
 
     .channel-card .channel-title {
-      font-size: 1.8rem;
+      font-size: 1.85rem;
       font-weight: 800;
       color: #ffffff;
       text-shadow: 0 2px 4px rgba(0,0,0,0.7);
@@ -150,13 +147,27 @@
     }
 
     .channel-card .channel-subtitle {
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: 600;
       color: rgba(255, 255, 255, 0.85);
       margin-top: 4px;
     }
 
-    /* Colores e identidades visuales oficiales por canal */
+    .badge-yt-hint {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #fca5a5;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 8px;
+      text-transform: uppercase;
+    }
+
+    /* Colores e identidades visuales */
     .card-tn {
       background: linear-gradient(135deg, #0b2545 0%, #134074 60%, #e65c00 100%);
     }
@@ -207,13 +218,69 @@
       background: #000;
     }
 
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: 0;
+    /* Pantalla de Contingencia / Fallback cuando se abre en YouTube */
+    .fallback-box {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      max-width: 650px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      border-radius: 32px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.8);
+      z-index: 20;
     }
 
-    /* Capa de controles gigantes sobre el video */
+    .fallback-box h2 {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      color: #ffffff;
+    }
+
+    .fallback-box p {
+      font-size: 1.3rem;
+      color: #cbd5e1;
+      margin-bottom: 24px;
+      line-height: 1.4;
+    }
+
+    /* BOTÓN GIGANTE AMARILLO (Ergonómico para temblor) */
+    .btn-giant {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      font-size: 1.7rem;
+      font-weight: 800;
+      padding: 18px 36px;
+      border-radius: 9999px;
+      background: #facc15;
+      color: #000000;
+      border: 4px solid #ffffff;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      min-height: 80px;
+      text-decoration: none;
+    }
+
+    .btn-giant:active {
+      transform: scale(0.95);
+      background: #eab308;
+    }
+
+    .btn-giant-red {
+      background: #dc2626;
+      color: #ffffff;
+      border-color: #fecaca;
+    }
+    .btn-giant-red:active {
+      background: #b91c1c;
+    }
+
+    /* Capa de controles sobre el video */
     .player-overlay {
       position: absolute;
       top: 0;
@@ -240,35 +307,11 @@
       pointer-events: auto;
     }
 
-    /* BOTÓN VOLVER GIGANTE (Ergonomía temblor: en esquina superior izquierda, lejos de la mano derecha) */
-    .btn-giant {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      font-size: 1.6rem;
-      font-weight: 800;
-      padding: 16px 32px;
-      border-radius: 9999px;
-      background: #facc15;
-      color: #000000;
-      border: 4px solid #ffffff;
-      cursor: pointer;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
-      min-height: 76px;
-      min-width: 190px;
-    }
-
-    .btn-giant:active {
-      transform: scale(0.95);
-      background: #eab308;
-    }
-
     .current-channel-info {
       display: flex;
       align-items: center;
       gap: 14px;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.75);
       padding: 12px 24px;
       border-radius: 9999px;
       border: 2px solid rgba(255, 255, 255, 0.2);
@@ -284,13 +327,13 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 20px;
+      gap: 16px;
       pointer-events: auto;
     }
 
     .btn-nav-channel {
       flex: 1;
-      max-width: 260px;
+      max-width: 250px;
       min-height: 72px;
       font-size: 1.35rem;
       font-weight: 700;
@@ -303,7 +346,6 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
     }
 
     .btn-nav-channel:active {
@@ -311,7 +353,7 @@
       transform: scale(0.96);
     }
 
-    /* Mensaje de carga o estado */
+    /* Spinner de carga */
     .loading-spinner {
       position: absolute;
       display: none;
@@ -322,10 +364,11 @@
       color: #ffffff;
       font-size: 1.5rem;
       font-weight: 700;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.75);
       padding: 24px 36px;
       border-radius: 24px;
       border: 2px solid rgba(255,255,255,0.2);
+      z-index: 10;
     }
 
     .spinner {
@@ -351,11 +394,11 @@
         📺 Mi Tele
         <span class="badge-live">En Vivo</span>
       </h1>
-      <span style="font-size: 1.1rem; color: #94a3b8; font-weight: 600;">Tocá el canal que quieras ver</span>
+      <span style="font-size: 1.15rem; color: #94a3b8; font-weight: 700;">Tocá el canal que quieras ver</span>
     </header>
 
     <section class="channels-grid" id="channels-container">
-      <!-- Los canales se renderizan dinámicamente con SVGs de alto contraste -->
+      <!-- Generado dinámicamente -->
     </section>
   </main>
 
@@ -363,16 +406,25 @@
   <section id="view-player">
     <div class="video-container" id="video-wrapper">
       <video id="tv-video" playsinline webkit-playsinline></video>
-      <div id="iframe-wrapper" style="display:none; width: 100%; height: 100%;"></div>
 
+      <!-- Mensaje de Carga -->
       <div class="loading-spinner" id="player-loading">
         <div class="spinner"></div>
         <span id="loading-text">Conectando canal en vivo...</span>
       </div>
 
+      <!-- Cuadro de Contingencia para ver en YouTube -->
+      <div class="fallback-box" id="fallback-box">
+        <h2 id="fallback-title">Ver transmisión en vivo</h2>
+        <p id="fallback-desc">Este canal transmite de forma oficial a través de YouTube.</p>
+        <a href="#" target="_blank" class="btn-giant btn-giant-red" id="btn-open-youtube">
+          ▶ ABRIR EN YOUTUBE
+        </a>
+      </div>
+
       <!-- Controles sobreimpresos gigantes -->
       <div class="player-overlay" id="player-overlay">
-        <!-- Parte Superior: Botón Volver gigante y nombre del canal -->
+        <!-- Parte Superior: Botón Volver gigante en esquina superior izquierda -->
         <div class="overlay-top">
           <button class="btn-giant" id="btn-back">
             ⬅ VOLVER
@@ -380,18 +432,18 @@
           
           <div class="current-channel-info">
             <span class="badge-live">VIVO</span>
-            <span class="current-channel-name" id="player-channel-name">TN</span>
+            <span class="current-channel-name" id="player-channel-name">Canal</span>
           </div>
         </div>
 
-        <!-- Parte Inferior: Botones gigantes para cambiar canal rápidamente -->
+        <!-- Parte Inferior: Navegación de canales -->
         <div class="overlay-bottom">
           <button class="btn-nav-channel" id="btn-prev-channel">
             ⏮ Anterior
           </button>
           
-          <button class="btn-giant" id="btn-reload-stream" style="background: rgba(255,255,255,0.15); color: #fff; font-size: 1.15rem; min-height: 60px; min-width: 150px; border-color: rgba(255,255,255,0.4);">
-            🔄 Reintentar
+          <button class="btn-giant" id="btn-force-yt" style="background: rgba(220, 38, 38, 0.85); color: #fff; font-size: 1.15rem; min-height: 60px; min-width: 170px; border-color: rgba(255,255,255,0.4);">
+            ▶ Ver en YouTube
           </button>
 
           <button class="btn-nav-channel" id="btn-next-channel">
@@ -404,8 +456,8 @@
 
   <script>
     /* ==========================================================================
-       DATOS DE LOS 6 CANALES FAVORITOS
-       Identidades visuales, streams HLS primarios y alternativas de YouTube
+       CONFIGURACIÓN DE LOS 6 CANALES
+       Streams HTTPS puros para evitar Mixed Content + Enlaces directos a YouTube
        ========================================================================== */
     const CHANNELS = [
       {
@@ -413,9 +465,11 @@
         name: "TN",
         subtitle: "Todo Noticias",
         themeClass: "card-tn",
-        // Streams oficiales en alta disponibilidad (HLS y YouTube)
-        hlsUrl: "https://live-01-02-tn.vodgc.net/tn/live/playlist.m3u8",
-        ytUrl: "https://www.youtube-nocookie.com/embed/live_stream?channel=UCj6P3Gs4nOKcL62qA8BWOnA&autoplay=1",
+        // Enlace HLS HTTPS directo en vodgc
+        hlsUrl: "https://live-01-01-tn.vodgc.net/TN24/index.m3u8",
+        fallbackHls: "https://live-01-01-tn.vodgc.net/TN_DAI_Beta/index.m3u8",
+        // Transmisión oficial en vivo 24hs en YouTube
+        ytLiveUrl: "https://www.youtube.com/@todonoticias/live",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#0b2545"/>
@@ -429,8 +483,9 @@
         name: "Telefe",
         subtitle: "Canal 11",
         themeClass: "card-telefe",
-        hlsUrl: "http://45.134.141.161:2200/ARG/TELEFE_HD/index.m3u8",
-        fallbackHls: "https://telefe-live.telefe.com/telefe/live/playlist.m3u8",
+        // Stream oficial HTTPS Pluto TV LATAM
+        hlsUrl: "https://siloh-mcdn.plutotv.net/lilo/production/LATAM/Telefe/master.m3u8",
+        ytLiveUrl: "https://www.youtube.com/@telefenoticias/live",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <circle cx="28" cy="50" r="18" fill="#2563eb" />
@@ -445,8 +500,9 @@
         name: "C5N",
         subtitle: "Noticias 24hs",
         themeClass: "card-c5n",
+        // Este funciona perfecto confirmado por el usuario
         hlsUrl: "https://c5n-live.vodgc.net/c5n/live/playlist.m3u8",
-        ytUrl: "https://www.youtube-nocookie.com/embed/live_stream?channel=UCFgk2Q2mVO1BklRQhSv6p0w&autoplay=1",
+        ytLiveUrl: "https://www.youtube.com/@c5n/live",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#991b1b"/>
@@ -459,7 +515,9 @@
         name: "El Trece",
         subtitle: "Canal 13",
         themeClass: "card-eltrece",
-        hlsUrl: "https://livetrx01.vodgc.net/eltrecetv/index.m3u8",
+        hlsUrl: "https://live-01-02-eltrece.vodgc.net/eltrecetv/index.m3u8",
+        fallbackHls: "https://livetrx01.vodgc.net/eltrecetv/index.m3u8",
+        ytLiveUrl: "https://www.youtube.com/@eltrece/live",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="42" fill="#581c87"/>
@@ -474,8 +532,9 @@
         name: "TV Pública",
         subtitle: "Canal 7",
         themeClass: "card-tvpublica",
-        hlsUrl: "https://live-01-01-tvp.vodgc.net/tvp/live/playlist.m3u8",
-        ytUrl: "https://www.youtube-nocookie.com/embed/live_stream?channel=UCfaI8y6eG_vF0q5Q67a-vHQ&autoplay=1",
+        // Stream oficial HTTPS seguro de CDN Footprint
+        hlsUrl: "https://cntlnk-main-edge-access.secure.footprint.net/entrypoint/c7_vivo01_dai_source-20001_all.m3u8",
+        ytLiveUrl: "https://www.youtube.com/@TVPublicaArgentina/live",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#0369a1"/>
@@ -490,8 +549,9 @@
         name: "Canal Rural",
         subtitle: "El campo en vivo",
         themeClass: "card-canalrural",
-        hlsUrl: "http://181.209.91.106:2222/Live/46055fc7d4bd0b1e3c91e9a9f1581864/rural.playlist.m3u8",
-        fallbackHls: "https://elrural.com/envivo",
+        // Transmisión directa oficial de YouTube para Canal Rural
+        directYouTubeOnly: true,
+        ytLiveUrl: "https://www.youtube.com/@canalrural/live",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#14532d"/>
@@ -503,21 +563,19 @@
     ];
 
     /* ==========================================================================
-       GESTIÓN DE ACCESIBILIDAD Y FILTRO DE TEMBLOR (DEBOUNCE / REBOUND FILTER)
+       FILTRO DE TEMBLOR ESENCIAL (DEBOUNCE + TOLERANCIA A ARRASTRE)
        ========================================================================== */
-    let lastTapTimestamp = 0;
-    const TREMOR_DEBOUNCE_MS = 650; // Ignora toques múltiples involuntarios en menos de 650ms
+    let lastTapTime = 0;
+    const TREMOR_DEBOUNCE_MS = 650;
     let touchStartX = 0;
     let touchStartY = 0;
 
-    function isValidIntentionalTap(event) {
+    function isIntentionalTap(event) {
       const now = Date.now();
-      if (now - lastTapTimestamp < TREMOR_DEBOUNCE_MS) {
-        return false; // Descartado por rebote de temblor
+      if (now - lastTapTime < TREMOR_DEBOUNCE_MS) {
+        return false;
       }
-      lastTapTimestamp = now;
-      
-      // Vibración de confirmación si el hardware lo soporta (feedback táctil)
+      lastTapTime = now;
       if (navigator.vibrate) {
         navigator.vibrate(60);
       }
@@ -525,19 +583,24 @@
     }
 
     /* ==========================================================================
-       RENDERIZADO DE LA GRILLA DE CANALES
+       CONSTRUCCIÓN DE LA GRILLA
        ========================================================================== */
     const container = document.getElementById("channels-container");
     CHANNELS.forEach((channel, index) => {
       const card = document.createElement("div");
       card.className = `channel-card ${channel.themeClass}`;
+      
+      const ytHint = channel.directYouTubeOnly 
+        ? `<span class="badge-yt-hint">🔴 YouTube</span>` 
+        : ``;
+
       card.innerHTML = `
+        ${ytHint}
         <div class="logo-container">${channel.logoSvg}</div>
         <div class="channel-title">${channel.name}</div>
         <div class="channel-subtitle">${channel.subtitle}</div>
       `;
 
-      // Eventos táctiles optimizados para temblor
       card.addEventListener("touchstart", (e) => {
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
@@ -548,19 +611,14 @@
         card.classList.remove("is-pressed");
         const touchEndX = e.changedTouches[0].clientX;
         const touchEndY = e.changedTouches[0].clientY;
-        
-        // Tolerancia a movimiento involuntario (si se movió menos de 30px, es un toque válido)
-        const moveDist = Math.hypot(touchEndX - touchStartX, touchEndY - touchStartY);
-        if (moveDist < 30) {
-          if (isValidIntentionalTap(e)) {
-            openChannel(index);
-          }
+        const dist = Math.hypot(touchEndX - touchStartX, touchEndY - touchStartY);
+        if (dist < 35 && isIntentionalTap(e)) {
+          openChannel(index);
         }
       });
 
       card.addEventListener("click", (e) => {
-        // Soporte mouse / emulador
-        if (isValidIntentionalTap(e)) {
+        if (isIntentionalTap(e)) {
           openChannel(index);
         }
       });
@@ -569,29 +627,34 @@
     });
 
     /* ==========================================================================
-       CONTROL DEL REPRODUCTOR
+       LÓGICA DEL REPRODUCTOR
        ========================================================================== */
     let currentIndex = 0;
     let hlsInstance = null;
     let overlayTimeout = null;
+    let connectionTimeout = null;
 
     const viewHome = document.getElementById("view-home");
     const viewPlayer = document.getElementById("view-player");
     const video = document.getElementById("tv-video");
-    const iframeWrapper = document.getElementById("iframe-wrapper");
     const playerLoading = document.getElementById("player-loading");
     const loadingText = document.getElementById("loading-text");
+    const fallbackBox = document.getElementById("fallback-box");
+    const fallbackTitle = document.getElementById("fallback-title");
+    const fallbackDesc = document.getElementById("fallback-desc");
+    const btnOpenYouTube = document.getElementById("btn-open-youtube");
     const playerOverlay = document.getElementById("player-overlay");
     const playerChannelName = document.getElementById("player-channel-name");
 
     const btnBack = document.getElementById("btn-back");
     const btnPrev = document.getElementById("btn-prev-channel");
     const btnNext = document.getElementById("btn-next-channel");
-    const btnReload = document.getElementById("btn-reload-stream");
+    const btnForceYT = document.getElementById("btn-force-yt");
 
-    function showLoading(text = "Conectando señal...") {
+    function showLoading(text) {
       loadingText.textContent = text;
       playerLoading.style.display = "flex";
+      fallbackBox.style.display = "none";
     }
 
     function hideLoading() {
@@ -601,25 +664,45 @@
     function resetOverlayTimer() {
       playerOverlay.classList.remove("hidden");
       clearTimeout(overlayTimeout);
-      // Los controles permanecen visibles 5 segundos y luego se ocultan para no molestar la visión
       overlayTimeout = setTimeout(() => {
         playerOverlay.classList.add("hidden");
       }, 5000);
     }
 
-    // Al tocar en cualquier lado de la pantalla de video, se vuelven a mostrar los controles
     document.getElementById("video-wrapper").addEventListener("click", () => {
       resetOverlayTimer();
     });
+
+    function showFallbackYouTube(channel, reason = "") {
+      hideLoading();
+      if (hlsInstance) {
+        hlsInstance.destroy();
+        hlsInstance = null;
+      }
+      video.pause();
+      video.style.display = "none";
+
+      fallbackTitle.textContent = `${channel.name} en Vivo`;
+      fallbackDesc.textContent = reason || `Tocá el botón para abrir la transmisión oficial en vivo de ${channel.name} en YouTube.`;
+      btnOpenYouTube.href = channel.ytLiveUrl;
+      fallbackBox.style.display = "flex";
+    }
 
     function openChannel(index) {
       currentIndex = index;
       const channel = CHANNELS[currentIndex];
 
-      // Cambiar de vista
+      // Si el canal está configurado solo por YouTube (como Canal Rural)
+      if (channel.directYouTubeOnly) {
+        // En tablets Android, abrir directamente la URL de YouTube abre la app de YouTube oficial
+        window.open(channel.ytLiveUrl, "_blank");
+        return;
+      }
+
       viewHome.style.display = "none";
       viewPlayer.style.display = "flex";
       playerChannelName.textContent = channel.name;
+      btnForceYT.onclick = () => window.open(channel.ytLiveUrl, "_blank");
       resetOverlayTimer();
 
       playCurrentChannel();
@@ -628,19 +711,25 @@
     function playCurrentChannel() {
       const channel = CHANNELS[currentIndex];
       showLoading(`Sintonizando ${channel.name}...`);
+      fallbackBox.style.display = "none";
+      video.style.display = "block";
 
-      // Detener reproducciones anteriores
       if (hlsInstance) {
         hlsInstance.destroy();
         hlsInstance = null;
       }
       video.pause();
       video.src = "";
-      video.style.display = "block";
-      iframeWrapper.style.display = "none";
-      iframeWrapper.innerHTML = "";
 
-      // Intentar reproducir stream HLS
+      clearTimeout(connectionTimeout);
+
+      // Si en 5 segundos no conecta el stream HLS por bloqueo de token/CORS, ofrece el botón de YouTube
+      connectionTimeout = setTimeout(() => {
+        if (video.paused || video.readyState < 2) {
+          showFallbackYouTube(channel, `No se pudo conectar la señal directa de ${channel.name}. Podés verla en vivo por YouTube:`);
+        }
+      }, 5000);
+
       if (Hls.isSupported() && channel.hlsUrl) {
         hlsInstance = new Hls({
           enableWorker: true,
@@ -652,61 +741,43 @@
         hlsInstance.attachMedia(video);
 
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+          clearTimeout(connectionTimeout);
           hideLoading();
           video.play().catch(e => console.log("Autoplay bloqueado:", e));
         });
 
         hlsInstance.on(Hls.Events.ERROR, (event, data) => {
           if (data.fatal) {
-            console.warn("Falla en HLS primario:", data);
-            // Si el stream HLS falla y el canal tiene YouTube disponible, conmutar a YouTube
-            if (channel.ytUrl) {
-              fallbackToYouTube(channel);
-            } else if (channel.fallbackHls) {
+            console.warn("Falla en HLS:", data);
+            if (channel.fallbackHls) {
               hlsInstance.loadSource(channel.fallbackHls);
-            } else {
-              showLoading("Reconectando señal en vivo...");
-              setTimeout(() => hlsInstance.loadSource(channel.hlsUrl), 3000);
+            } else if (channel.ytLiveUrl) {
+              clearTimeout(connectionTimeout);
+              showFallbackYouTube(channel);
             }
           }
         });
       } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        // Safari / iOS nativo
         video.src = channel.hlsUrl;
         video.addEventListener("loadedmetadata", () => {
+          clearTimeout(connectionTimeout);
           hideLoading();
           video.play();
         });
-      } else if (channel.ytUrl) {
-        fallbackToYouTube(channel);
+      } else if (channel.ytLiveUrl) {
+        clearTimeout(connectionTimeout);
+        showFallbackYouTube(channel);
       }
-    }
-
-    function fallbackToYouTube(channel) {
-      if (hlsInstance) {
-        hlsInstance.destroy();
-        hlsInstance = null;
-      }
-      video.style.display = "none";
-      iframeWrapper.style.display = "block";
-      iframeWrapper.innerHTML = `
-        <iframe 
-          src="${channel.ytUrl}" 
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-          allowfullscreen>
-        </iframe>
-      `;
-      hideLoading();
     }
 
     function closePlayer() {
+      clearTimeout(connectionTimeout);
       if (hlsInstance) {
         hlsInstance.destroy();
         hlsInstance = null;
       }
       video.pause();
       video.src = "";
-      iframeWrapper.innerHTML = "";
 
       viewPlayer.style.display = "none";
       viewHome.style.display = "flex";
@@ -716,53 +787,39 @@
     // BOTÓN VOLVER GIGANTE
     btnBack.addEventListener("click", (e) => {
       e.stopPropagation();
-      if (isValidIntentionalTap(e)) {
+      if (isIntentionalTap(e)) {
         closePlayer();
       }
     });
 
-    // CANAL SIGUIENTE / ANTERIOR
+    // ANTERIOR / SIGUIENTE
     btnNext.addEventListener("click", (e) => {
       e.stopPropagation();
-      if (isValidIntentionalTap(e)) {
+      if (isIntentionalTap(e)) {
         currentIndex = (currentIndex + 1) % CHANNELS.length;
-        playerChannelName.textContent = CHANNELS[currentIndex].name;
-        playCurrentChannel();
-        resetOverlayTimer();
+        openChannel(currentIndex);
       }
     });
 
     btnPrev.addEventListener("click", (e) => {
       e.stopPropagation();
-      if (isValidIntentionalTap(e)) {
+      if (isIntentionalTap(e)) {
         currentIndex = (currentIndex - 1 + CHANNELS.length) % CHANNELS.length;
-        playerChannelName.textContent = CHANNELS[currentIndex].name;
-        playCurrentChannel();
-        resetOverlayTimer();
+        openChannel(currentIndex);
       }
     });
 
-    // REINTENTAR SEÑAL
-    btnReload.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (isValidIntentionalTap(e)) {
-        playCurrentChannel();
-      }
-    });
-
-    // Soporte para botón "Atrás" de Android / tablet
     window.addEventListener("popstate", () => {
       if (viewPlayer.style.display === "flex") {
         closePlayer();
       }
     });
 
-    // Registro de Service Worker para habilitar instalación PWA
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('PWA Service Worker registrado con éxito'))
-          .catch(err => console.log('Error registrando Service Worker:', err));
+          .then(reg => console.log('PWA Service Worker registrado'))
+          .catch(err => console.log('Error de Service Worker:', err));
       });
     }
   </script>
