@@ -1,0 +1,18 @@
+{
+  "name": "Mi Tele",
+  "short_name": "Mi Tele",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0d0f12",
+  "theme_color": "#0d0f12",
+  "orientation": "any",
+  "description": "Televisión argentina fácil y accesible para adultos mayores",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
