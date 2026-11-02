@@ -1,18 +1,11 @@
-// Service Worker básico para permitir la instalación de la PWA
-const CACHE_NAME = 'tele-mama-v1';
+// Service Worker con estrategia Network-First para index.html para evitar que la página quede congelada en caché
+const CACHE_NAME = 'tele-mama-v4';
 const ASSETS = [
-  './',
-  './index.html',
   './manifest.json',
   './icon.svg'
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
-  );
   self.skipWaiting();
 });
 
@@ -20,11 +13,7 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
+        keys.map((key) => caches.delete(key))
       );
     })
   );
@@ -32,13 +21,17 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Solo cachear recursos locales (HTML, CSS, JSON, SVG); no cachear streams de video en vivo
+  // Ignorar streams de video
   if (e.request.url.includes('.m3u8') || e.request.url.includes('.ts') || e.request.url.includes('youtube')) {
     return;
   }
+
+  // Network-First para la página web: siempre busca la última versión de GitHub
   e.respondWith(
-    caches.match(e.request).then((res) => {
-      return res || fetch(e.request);
-    })
+    fetch(e.request)
+      .then((response) => {
+        return response;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
