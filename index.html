@@ -530,8 +530,8 @@
         name: "TV Pública",
         subtitle: "Canal 7",
         themeClass: "card-tvpublica",
-        hlsUrl: "https://ola1.com.ar/tvp/index.m3u8",
-        fallbackHls: "https://cntlnk-main-edge-access.secure.footprint.net/entrypoint/c7_vivo01_dai_source-20001_all.m3u8",
+        hlsUrl: "https://cntlnk-main-edge-access.secure.footprint.net/entrypoint/c7_vivo01_dai_source-20001_all.m3u8",
+        fallbackHls: "https://ola1.com.ar/tvp/index.m3u8",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#0369a1"/>
@@ -546,7 +546,7 @@
         name: "Canal Rural",
         subtitle: "El campo en vivo",
         themeClass: "card-canalrural",
-        hlsUrl: "http://200.91.32.158:8080/rural/index.m3u8",
+        hlsUrl: "https://cda2.alsolnet.com/elrural/live/playlist.m3u8",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#14532d"/>
@@ -738,17 +738,19 @@
           video.play().catch(e => console.log("Autoplay:", e));
         });
 
+        let triedFallback = false;
         hlsInstance.on(Hls.Events.ERROR, (event, data) => {
           if (data.fatal) {
             console.warn(`Error HLS en ${channel.name}:`, data);
-            if (channel.fallbackHls && channel.fallbackHls !== channel.hlsUrl) {
+            if (!triedFallback && channel.fallbackHls && channel.fallbackHls !== channel.hlsUrl) {
+              triedFallback = true;
               console.log("Probando stream de respaldo...");
               hlsInstance.loadSource(channel.fallbackHls);
             } else {
               hideLoading();
               showChannelNotice(
-                `${channel.name} no emite señal web abierta`,
-                `Esta cadena de televisión bloquea la transmisión hacia navegadores web debido a restricciones de derechos de autor.`
+                `Señal web de ${channel.name} no disponible`,
+                `Este canal bloquea la transmisión hacia navegadores web debido a restricciones de derechos de autor. Tocá cualquier otro canal en el menú inferior.`
               );
             }
           }
