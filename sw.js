@@ -15,23 +15,26 @@ self.addEventListener('activate', (e) => {
       return Promise.all(
         keys.map((key) => caches.delete(key))
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (e) => {
-  // Ignorar completamente streams de video y fragmentos
-  if (e.request.url.includes('.m3u8') || e.request.url.includes('.ts') || e.request.url.includes('youtube') || e.request.url.includes('googlevideo')) {
+  // Ignorar streams de video (.m3u8, .ts, etc.) y recursos externos
+  if (e.request.url.includes('.m3u8') || e.request.url.includes('.ts') || e.request.url.includes('jsdelivr')) {
     return;
   }
 
-  // Network-First para index.html y recursos: siempre busca la última versión de GitHub
+  // Si es la página principal (HTML), SIEMPRE buscar en la red sin caché
+  if (e.request.mode === 'navigate' || e.request.destination === 'document' || e.request.url.endsWith('index.html') || e.request.url.endsWith('/')) {
+    e.respondWith(
+      fetch(e.request)
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
   e.respondWith(
-    fetch(e.request)
-      .then((response) => {
-        return response;
-      })
-      .catch(() => caches.match(e.request))
+    fetch(e.request).catch(() => caches.match(e.request))
   );
 });

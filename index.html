@@ -530,8 +530,8 @@
         name: "TV Pública",
         subtitle: "Canal 7",
         themeClass: "card-tvpublica",
-        hlsUrl: "https://cntlnk-main-edge-access.secure.footprint.net/entrypoint/c7_vivo01_dai_source-20001_all.m3u8",
-        fallbackHls: "https://ola1.com.ar/tvp/index.m3u8",
+        hlsUrl: "https://g5.vxral-hor.transport.edge-access.net/b16/ngrp:c7_vivo01_dai_source-20001_all/playlist.m3u8",
+        fallbackHls: "https://cntlnk-main-edge-access.secure.footprint.net/entrypoint/c7_vivo01_dai_source-20001_all.m3u8",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#0369a1"/>
@@ -547,6 +547,7 @@
         subtitle: "El campo en vivo",
         themeClass: "card-canalrural",
         hlsUrl: "https://cda2.alsolnet.com/elrural/live/playlist.m3u8",
+        fallbackHls: "https://cda.alsolnet.com/elrural/live/playlist.m3u8",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#14532d"/>
@@ -642,6 +643,7 @@
     let currentIndex = 0;
     let hlsInstance = null;
     let overlayTimeout = null;
+    let hasTriedFallback = false;
 
     const viewHome = document.getElementById("view-home");
     const viewPlayer = document.getElementById("view-player");
@@ -712,6 +714,7 @@
 
     function playCurrentChannel() {
       const channel = CHANNELS[currentIndex];
+      hasTriedFallback = false;
       showLoading(`Sintonizando ${channel.name}...`);
       channelNotice.style.display = "none";
 
@@ -720,14 +723,18 @@
         hlsInstance = null;
       }
       video.pause();
-      video.src = "";
+      video.removeAttribute("src");
+      video.load();
 
       if (Hls.isSupported() && channel.hlsUrl) {
         hlsInstance = new Hls({
           enableWorker: true,
           lowLatencyMode: true,
           backBufferLength: 60,
-          manifestLoadingTimeOut: 8000
+          manifestLoadingTimeOut: 10000,
+          manifestLoadingMaxRetry: 3,
+          levelLoadingTimeOut: 10000,
+          fragLoadingTimeOut: 15000
         });
 
         hlsInstance.loadSource(channel.hlsUrl);
@@ -735,23 +742,49 @@
 
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
           hideLoading();
-          video.play().catch(e => console.log("Autoplay:", e));
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise.catch((err) => {
+              console.log("Autoplay con audio bloqueado por navegador, intentando muted:", err);
+              video.muted = true;
+              video.play().catch(e => console.log("Play error:", e));
+            });
+          }
         });
 
-        let triedFallback = false;
         hlsInstance.on(Hls.Events.ERROR, (event, data) => {
           if (data.fatal) {
-            console.warn(`Error HLS en ${channel.name}:`, data);
-            if (!triedFallback && channel.fallbackHls && channel.fallbackHls !== channel.hlsUrl) {
-              triedFallback = true;
-              console.log("Probando stream de respaldo...");
-              hlsInstance.loadSource(channel.fallbackHls);
-            } else {
-              hideLoading();
-              showChannelNotice(
-                `Señal web de ${channel.name} no disponible`,
-                `Este canal bloquea la transmisión hacia navegadores web debido a restricciones de derechos de autor. Tocá cualquier otro canal en el menú inferior.`
-              );
+            console.warn(`Error HLS fatal en ${channel.name}:`, data);
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                if (!hasTriedFallback && channel.fallbackHls && channel.fallbackHls !== channel.hlsUrl) {
+                  hasTriedFallback = true;
+                  console.log(`Probando stream de respaldo para ${channel.name}...`);
+                  showLoading(`Conectando señal de respaldo...`);
+                  hlsInstance.loadSource(channel.fallbackHls);
+                  hlsInstance.startLoad();
+                } else {
+                  hideLoading();
+                  showChannelNotice(
+                    `Señal de ${channel.name} no disponible`,
+                    `El servidor de la emisora no responde en este momento. Podés reintentar o elegir otro canal abajo.`
+                  );
+                }
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                console.warn("Recuperando de error de medios...");
+                hlsInstance.recoverMediaError();
+                break;
+              default:
+                hideLoading();
+                showChannelNotice(
+                  `Error en la transmisión de ${channel.name}`,
+                  `Hubo un inconveniente al cargar el video. Tocá "Reintentar" o elegí otro canal.`
+                );
+                if (hlsInstance) {
+                  hlsInstance.destroy();
+                }
+                break;
             }
           }
         });
@@ -759,7 +792,19 @@
         video.src = channel.hlsUrl;
         video.addEventListener("loadedmetadata", () => {
           hideLoading();
-          video.play();
+          video.play().catch(e => {
+            video.muted = true;
+            video.play();
+          });
+        });
+        video.addEventListener("error", () => {
+          if (!hasTriedFallback && channel.fallbackHls) {
+            hasTriedFallback = true;
+            video.src = channel.fallbackHls;
+          } else {
+            hideLoading();
+            showChannelNotice(`Señal de ${channel.name} no disponible`, `No se pudo reproducir en este navegador.`);
+          }
         });
       } else {
         hideLoading();
@@ -786,7 +831,8 @@
         hlsInstance = null;
       }
       video.pause();
-      video.src = "";
+      video.removeAttribute("src");
+      video.load();
 
       viewPlayer.style.display = "none";
       viewHome.style.display = "flex";
@@ -806,10 +852,14 @@
       }
     });
 
+    // Registro de Service Worker para PWA con actualización inmediata
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('PWA Service Worker registrado'))
+        navigator.serviceWorker.register('./sw.js?v=5')
+          .then(reg => {
+            console.log('PWA Service Worker registrado con éxito');
+            reg.update();
+          })
           .catch(err => console.log('Error de Service Worker:', err));
       });
     }
