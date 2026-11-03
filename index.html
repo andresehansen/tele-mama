@@ -464,6 +464,20 @@
 
   <script>
     /* ==========================================================================
+       CONFIGURACIÓN DE PROXY CORS (CLOUDFLARE WORKER)
+       ========================================================================== */
+    // Una vez desplegado tu Worker gratuito en Cloudflare, pegá su URL aquí:
+    const CLOUDFLARE_WORKER_URL = "https://mi-tele-proxy.andresehansen.workers.dev";
+
+    function getProxiedUrl(targetUrl) {
+      if (!CLOUDFLARE_WORKER_URL || !targetUrl) return targetUrl;
+      const base = CLOUDFLARE_WORKER_URL.endsWith("/")
+        ? CLOUDFLARE_WORKER_URL.slice(0, -1)
+        : CLOUDFLARE_WORKER_URL;
+      return `${base}/?url=${encodeURIComponent(targetUrl)}`;
+    }
+
+    /* ==========================================================================
        CONFIGURACIÓN DE LOS 6 CANALES (STREAMS DIRECTOS)
        ========================================================================== */
     const CHANNELS = [
@@ -472,7 +486,9 @@
         name: "TN",
         subtitle: "Todo Noticias",
         themeClass: "card-tn",
+        useProxy: true,
         hlsUrl: "https://live-01-01-tn.vodgc.net/TN24/index.m3u8",
+        fallbackHls: "https://live-01-02-tn.vodgc.net/TN24/index.m3u8",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#0b2545"/>
@@ -486,6 +502,7 @@
         name: "Telefe",
         subtitle: "Canal 11",
         themeClass: "card-telefe",
+        useProxy: true,
         hlsUrl: "https://siloh-mcdn.plutotv.net/lilo/production/LATAM/Telefe/master.m3u8",
         logoSvg: `
           <svg viewBox="0 0 100 100">
@@ -501,7 +518,9 @@
         name: "C5N",
         subtitle: "Noticias 24hs",
         themeClass: "card-c5n",
+        useProxy: true,
         hlsUrl: "https://c5n-live.vodgc.net/c5n/live/playlist.m3u8",
+        fallbackHls: "https://live-01-01-c5n.vodgc.net/c5n/live/playlist.m3u8",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#991b1b"/>
@@ -514,6 +533,7 @@
         name: "El Trece",
         subtitle: "Canal 13",
         themeClass: "card-eltrece",
+        useProxy: false, // Funciona 100% directo sin proxy
         hlsUrl: "https://livetrx01.vodgc.net/eltrecetv/index.m3u8",
         fallbackHls: "https://live-01-01-eltrece.vodgc.net/eltrecetv/index.m3u8",
         logoSvg: `
@@ -530,6 +550,7 @@
         name: "TV Pública",
         subtitle: "Canal 7",
         themeClass: "card-tvpublica",
+        useProxy: true,
         hlsUrl: "https://g5.vxral-hor.transport.edge-access.net/b16/ngrp:c7_vivo01_dai_source-20001_all/playlist.m3u8",
         fallbackHls: "https://cntlnk-main-edge-access.secure.footprint.net/entrypoint/c7_vivo01_dai_source-20001_all.m3u8",
         logoSvg: `
@@ -546,6 +567,7 @@
         name: "Canal Rural",
         subtitle: "El campo en vivo",
         themeClass: "card-canalrural",
+        useProxy: true,
         hlsUrl: "https://cda2.alsolnet.com/elrural/live/playlist.m3u8",
         fallbackHls: "https://cda.alsolnet.com/elrural/live/playlist.m3u8",
         logoSvg: `
@@ -726,18 +748,36 @@
       video.removeAttribute("src");
       video.load();
 
+      const shouldUseProxy = channel.useProxy && !!CLOUDFLARE_WORKER_URL;
+      const initialUrl = shouldUseProxy ? getProxiedUrl(channel.hlsUrl) : channel.hlsUrl;
+
       if (Hls.isSupported() && channel.hlsUrl) {
-        hlsInstance = new Hls({
+        const hlsConfig = {
           enableWorker: true,
           lowLatencyMode: true,
           backBufferLength: 60,
-          manifestLoadingTimeOut: 10000,
-          manifestLoadingMaxRetry: 3,
-          levelLoadingTimeOut: 10000,
+          manifestLoadingTimeOut: 12000,
+          manifestLoadingMaxRetry: 4,
+          levelLoadingTimeOut: 12000,
           fragLoadingTimeOut: 15000
-        });
+        };
 
-        hlsInstance.loadSource(channel.hlsUrl);
+        // Si el canal requiere proxy y está configurado el worker, ruteamos las peticiones secundarias (.ts / variantes)
+        if (shouldUseProxy) {
+          class CorsProxyLoader extends Hls.DefaultConfig.loader {
+            load(context, config, callbacks) {
+              if (context.url && !context.url.includes(CLOUDFLARE_WORKER_URL)) {
+                context.url = getProxiedUrl(context.url);
+              }
+              super.load(context, config, callbacks);
+            }
+          }
+          hlsConfig.loader = CorsProxyLoader;
+        }
+
+        hlsInstance = new Hls(hlsConfig);
+
+        hlsInstance.loadSource(initialUrl);
         hlsInstance.attachMedia(video);
 
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -761,13 +801,16 @@
                   hasTriedFallback = true;
                   console.log(`Probando stream de respaldo para ${channel.name}...`);
                   showLoading(`Conectando señal de respaldo...`);
-                  hlsInstance.loadSource(channel.fallbackHls);
+                  const fallbackUrl = shouldUseProxy ? getProxiedUrl(channel.fallbackHls) : channel.fallbackHls;
+                  hlsInstance.loadSource(fallbackUrl);
                   hlsInstance.startLoad();
                 } else {
                   hideLoading();
                   showChannelNotice(
                     `Señal de ${channel.name} no disponible`,
-                    `El servidor de la emisora no responde en este momento. Podés reintentar o elegir otro canal abajo.`
+                    CLOUDFLARE_WORKER_URL 
+                      ? `El servidor de la emisora no responde en este momento. Podés reintentar o elegir otro canal abajo.`
+                      : `Este canal requiere activar el Micro-Worker CORS en Cloudflare para reproducir en la web.`
                   );
                 }
                 break;
@@ -789,7 +832,7 @@
           }
         });
       } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = channel.hlsUrl;
+        video.src = initialUrl;
         video.addEventListener("loadedmetadata", () => {
           hideLoading();
           video.play().catch(e => {
@@ -800,7 +843,7 @@
         video.addEventListener("error", () => {
           if (!hasTriedFallback && channel.fallbackHls) {
             hasTriedFallback = true;
-            video.src = channel.fallbackHls;
+            video.src = shouldUseProxy ? getProxiedUrl(channel.fallbackHls) : channel.fallbackHls;
           } else {
             hideLoading();
             showChannelNotice(`Señal de ${channel.name} no disponible`, `No se pudo reproducir en este navegador.`);
@@ -855,7 +898,7 @@
     // Registro de Service Worker para PWA con actualización inmediata
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=5')
+        navigator.serviceWorker.register('./sw.js?v=6')
           .then(reg => {
             console.log('PWA Service Worker registrado con éxito');
             reg.update();
