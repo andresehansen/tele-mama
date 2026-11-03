@@ -1,5 +1,5 @@
 // Service Worker con estrategia Network-First para index.html para evitar que la página quede congelada en caché
-const CACHE_NAME = 'tele-mama-v7';
+const CACHE_NAME = 'tele-mama-v8';
 const ASSETS = [
   './manifest.json',
   './icon.svg'
@@ -20,8 +20,8 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Ignorar streams de video (.m3u8, .ts, etc.) y recursos externos
-  if (e.request.url.includes('.m3u8') || e.request.url.includes('.ts') || e.request.url.includes('jsdelivr')) {
+  // Ignorar streams de video (.m3u8, .ts, etc.), proxy y recursos externos
+  if (e.request.url.includes('.m3u8') || e.request.url.includes('.ts') || e.request.url.includes('jsdelivr') || e.request.url.includes('workers.dev') || e.request.url.includes('lambda-url')) {
     return;
   }
 
