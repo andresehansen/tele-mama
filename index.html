@@ -199,11 +199,16 @@
       overflow: hidden;
     }
 
-    video#tv-video {
+    video#tv-video, iframe#tv-iframe {
       width: 100%;
       height: 100%;
       object-fit: contain;
       background: #000;
+      border: none;
+    }
+
+    iframe#tv-iframe {
+      pointer-events: none !important;
     }
 
     /* Cartel de mensaje o reintento */
@@ -422,6 +427,9 @@
       <!-- Video HLS Nativo -->
       <video id="tv-video" playsinline webkit-playsinline></video>
 
+      <!-- Iframe protegido para canales con stream en vivo (TN, C5N) -->
+      <iframe id="tv-iframe" allow="autoplay; encrypted-media; picture-in-picture" playsinline style="display: none;"></iframe>
+
       <!-- Cartel de carga -->
       <div class="loading-spinner" id="player-loading">
         <div class="spinner"></div>
@@ -486,9 +494,8 @@
         name: "TN",
         subtitle: "Todo Noticias",
         themeClass: "card-tn",
-        useProxy: true,
-        hlsUrl: "https://live-01-01-tn.vodgc.net/TN24/index.m3u8",
-        fallbackHls: "https://live-01-02-tn.vodgc.net/TN24/index.m3u8",
+        type: "embed",
+        embedUrl: "https://www.youtube-nocookie.com/embed/live_stream?channel=UCj6PcyLvPNbTGpA455g15tA&autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&playsinline=1",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#0b2545"/>
@@ -502,7 +509,8 @@
         name: "Telefe",
         subtitle: "Canal 11",
         themeClass: "card-telefe",
-        useProxy: true,
+        type: "hls",
+        useProxy: false,
         hlsUrl: "https://siloh-mcdn.plutotv.net/lilo/production/LATAM/Telefe/master.m3u8",
         logoSvg: `
           <svg viewBox="0 0 100 100">
@@ -518,9 +526,8 @@
         name: "C5N",
         subtitle: "Noticias 24hs",
         themeClass: "card-c5n",
-        useProxy: true,
-        hlsUrl: "https://c5n-live.vodgc.net/c5n/live/playlist.m3u8",
-        fallbackHls: "https://live-01-01-c5n.vodgc.net/c5n/live/playlist.m3u8",
+        type: "embed",
+        embedUrl: "https://www.youtube-nocookie.com/embed/live_stream?channel=UCFgk2Q2mVO1BklRQhSv6p0w&autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&playsinline=1",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#991b1b"/>
@@ -533,7 +540,8 @@
         name: "El Trece",
         subtitle: "Canal 13",
         themeClass: "card-eltrece",
-        useProxy: false, // Funciona 100% directo sin proxy
+        type: "hls",
+        useProxy: false, // 100% nativo confirmado funcionando
         hlsUrl: "https://livetrx01.vodgc.net/eltrecetv/index.m3u8",
         fallbackHls: "https://live-01-01-eltrece.vodgc.net/eltrecetv/index.m3u8",
         logoSvg: `
@@ -550,7 +558,8 @@
         name: "TV Pública",
         subtitle: "Canal 7",
         themeClass: "card-tvpublica",
-        useProxy: true,
+        type: "hls",
+        useProxy: false,
         hlsUrl: "https://g5.vxral-hor.transport.edge-access.net/b16/ngrp:c7_vivo01_dai_source-20001_all/playlist.m3u8",
         fallbackHls: "https://cntlnk-main-edge-access.secure.footprint.net/entrypoint/c7_vivo01_dai_source-20001_all.m3u8",
         logoSvg: `
@@ -567,7 +576,8 @@
         name: "Canal Rural",
         subtitle: "El campo en vivo",
         themeClass: "card-canalrural",
-        useProxy: true,
+        type: "hls",
+        useProxy: false,
         hlsUrl: "https://cda2.alsolnet.com/elrural/live/playlist.m3u8",
         fallbackHls: "https://cda.alsolnet.com/elrural/live/playlist.m3u8",
         logoSvg: `
@@ -747,111 +757,126 @@
       video.pause();
       video.removeAttribute("src");
       video.load();
+      video.style.display = "none";
 
-      const shouldUseProxy = channel.useProxy && !!CLOUDFLARE_WORKER_URL;
-      const initialUrl = shouldUseProxy ? getProxiedUrl(channel.hlsUrl) : channel.hlsUrl;
+      const iframe = document.getElementById("tv-iframe");
+      iframe.src = "";
+      iframe.style.display = "none";
 
-      if (Hls.isSupported() && channel.hlsUrl) {
-        const hlsConfig = {
-          enableWorker: true,
-          lowLatencyMode: true,
-          backBufferLength: 60,
-          manifestLoadingTimeOut: 12000,
-          manifestLoadingMaxRetry: 4,
-          levelLoadingTimeOut: 12000,
-          fragLoadingTimeOut: 15000
-        };
-
-        // Si el canal requiere proxy y está configurado el worker, ruteamos las peticiones secundarias (.ts / variantes)
-        if (shouldUseProxy) {
-          class CorsProxyLoader extends Hls.DefaultConfig.loader {
-            load(context, config, callbacks) {
-              if (context.url && !context.url.includes(CLOUDFLARE_WORKER_URL)) {
-                context.url = getProxiedUrl(context.url);
-              }
-              super.load(context, config, callbacks);
-            }
-          }
-          hlsConfig.loader = CorsProxyLoader;
-        }
-
-        hlsInstance = new Hls(hlsConfig);
-
-        hlsInstance.loadSource(initialUrl);
-        hlsInstance.attachMedia(video);
-
-        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+      if (channel.type === "embed") {
+        // MODO TRANSMISIÓN EN VIVO BLINDADA (TN y C5N)
+        // Con pointer-events: none, la mamá NUNCA interactúa con YouTube
+        iframe.style.display = "block";
+        iframe.src = channel.embedUrl;
+        setTimeout(() => {
           hideLoading();
-          const playPromise = video.play();
-          if (playPromise !== undefined) {
-            playPromise.catch((err) => {
-              console.log("Autoplay con audio bloqueado por navegador, intentando muted:", err);
-              video.muted = true;
-              video.play().catch(e => console.log("Play error:", e));
-            });
-          }
-        });
+        }, 1200);
+      } else {
+        // MODO HLS NATIVO (El Trece, TV Pública, Canal Rural, Telefe)
+        video.style.display = "block";
+        const shouldUseProxy = channel.useProxy && !!CLOUDFLARE_WORKER_URL;
+        const initialUrl = shouldUseProxy ? getProxiedUrl(channel.hlsUrl) : channel.hlsUrl;
 
-        hlsInstance.on(Hls.Events.ERROR, (event, data) => {
-          if (data.fatal) {
-            console.warn(`Error HLS fatal en ${channel.name}:`, data);
-            switch (data.type) {
-              case Hls.ErrorTypes.NETWORK_ERROR:
-                if (!hasTriedFallback && channel.fallbackHls && channel.fallbackHls !== channel.hlsUrl) {
-                  hasTriedFallback = true;
-                  console.log(`Probando stream de respaldo para ${channel.name}...`);
-                  showLoading(`Conectando señal de respaldo...`);
-                  const fallbackUrl = shouldUseProxy ? getProxiedUrl(channel.fallbackHls) : channel.fallbackHls;
-                  hlsInstance.loadSource(fallbackUrl);
-                  hlsInstance.startLoad();
-                } else {
+        if (Hls.isSupported() && channel.hlsUrl) {
+          const hlsConfig = {
+            enableWorker: true,
+            lowLatencyMode: true,
+            backBufferLength: 60,
+            manifestLoadingTimeOut: 12000,
+            manifestLoadingMaxRetry: 4,
+            levelLoadingTimeOut: 12000,
+            fragLoadingTimeOut: 15000
+          };
+
+          // Si el canal requiere proxy y está configurado el worker, ruteamos las peticiones secundarias (.ts / variantes)
+          if (shouldUseProxy) {
+            class CorsProxyLoader extends Hls.DefaultConfig.loader {
+              load(context, config, callbacks) {
+                if (context.url && !context.url.includes(CLOUDFLARE_WORKER_URL)) {
+                  context.url = getProxiedUrl(context.url);
+                }
+                super.load(context, config, callbacks);
+              }
+            }
+            hlsConfig.loader = CorsProxyLoader;
+          }
+
+          hlsInstance = new Hls(hlsConfig);
+
+          hlsInstance.loadSource(initialUrl);
+          hlsInstance.attachMedia(video);
+
+          hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+            hideLoading();
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+              playPromise.catch((err) => {
+                console.log("Autoplay con audio bloqueado por navegador, intentando muted:", err);
+                video.muted = true;
+                video.play().catch(e => console.log("Play error:", e));
+              });
+            }
+          });
+
+          hlsInstance.on(Hls.Events.ERROR, (event, data) => {
+            if (data.fatal) {
+              console.warn(`Error HLS fatal en ${channel.name}:`, data);
+              switch (data.type) {
+                case Hls.ErrorTypes.NETWORK_ERROR:
+                  if (!hasTriedFallback && channel.fallbackHls && channel.fallbackHls !== channel.hlsUrl) {
+                    hasTriedFallback = true;
+                    console.log(`Probando stream de respaldo para ${channel.name}...`);
+                    showLoading(`Conectando señal de respaldo...`);
+                    const fallbackUrl = shouldUseProxy ? getProxiedUrl(channel.fallbackHls) : channel.fallbackHls;
+                    hlsInstance.loadSource(fallbackUrl);
+                    hlsInstance.startLoad();
+                  } else {
+                    hideLoading();
+                    showChannelNotice(
+                      `Señal de ${channel.name} no disponible`,
+                      `El servidor de la emisora no responde en este momento. Podés reintentar o elegir otro canal abajo.`
+                    );
+                  }
+                  break;
+                case Hls.ErrorTypes.MEDIA_ERROR:
+                  console.warn("Recuperando de error de medios...");
+                  hlsInstance.recoverMediaError();
+                  break;
+                default:
                   hideLoading();
                   showChannelNotice(
-                    `Señal de ${channel.name} no disponible`,
-                    CLOUDFLARE_WORKER_URL 
-                      ? `El servidor de la emisora no responde en este momento. Podés reintentar o elegir otro canal abajo.`
-                      : `Este canal requiere activar el Micro-Worker CORS en Cloudflare para reproducir en la web.`
+                    `Error en la transmisión de ${channel.name}`,
+                    `Hubo un inconveniente al cargar el video. Tocá "Reintentar" o elegí otro canal.`
                   );
-                }
-                break;
-              case Hls.ErrorTypes.MEDIA_ERROR:
-                console.warn("Recuperando de error de medios...");
-                hlsInstance.recoverMediaError();
-                break;
-              default:
-                hideLoading();
-                showChannelNotice(
-                  `Error en la transmisión de ${channel.name}`,
-                  `Hubo un inconveniente al cargar el video. Tocá "Reintentar" o elegí otro canal.`
-                );
-                if (hlsInstance) {
-                  hlsInstance.destroy();
-                }
-                break;
+                  if (hlsInstance) {
+                    hlsInstance.destroy();
+                  }
+                  break;
+              }
             }
-          }
-        });
-      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = initialUrl;
-        video.addEventListener("loadedmetadata", () => {
-          hideLoading();
-          video.play().catch(e => {
-            video.muted = true;
-            video.play();
           });
-        });
-        video.addEventListener("error", () => {
-          if (!hasTriedFallback && channel.fallbackHls) {
-            hasTriedFallback = true;
-            video.src = shouldUseProxy ? getProxiedUrl(channel.fallbackHls) : channel.fallbackHls;
-          } else {
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          video.src = initialUrl;
+          video.addEventListener("loadedmetadata", () => {
             hideLoading();
-            showChannelNotice(`Señal de ${channel.name} no disponible`, `No se pudo reproducir en este navegador.`);
-          }
-        });
-      } else {
-        hideLoading();
-        showChannelNotice("Navegador no compatible", "Tu navegador no soporta streaming HLS.");
+            video.play().catch(e => {
+              video.muted = true;
+              video.play();
+            });
+          });
+          video.addEventListener("error", () => {
+            if (!hasTriedFallback && channel.fallbackHls) {
+              hasTriedFallback = true;
+              video.src = shouldUseProxy ? getProxiedUrl(channel.fallbackHls) : channel.fallbackHls;
+            } else {
+              hideLoading();
+              showChannelNotice(`Señal de ${channel.name} no disponible`, `No se pudo reproducir en este navegador.`);
+            }
+          });
+        } else {
+          hideLoading();
+          showChannelNotice("Navegador no compatible", "Tu navegador no soporta streaming HLS.");
+        }
       }
     }
 
@@ -876,6 +901,11 @@
       video.pause();
       video.removeAttribute("src");
       video.load();
+      video.style.display = "none";
+
+      const iframe = document.getElementById("tv-iframe");
+      iframe.src = "";
+      iframe.style.display = "none";
 
       viewPlayer.style.display = "none";
       viewHome.style.display = "flex";
@@ -898,7 +928,7 @@
     // Registro de Service Worker para PWA con actualización inmediata
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=6')
+        navigator.serviceWorker.register('./sw.js?v=7')
           .then(reg => {
             console.log('PWA Service Worker registrado con éxito');
             reg.update();
