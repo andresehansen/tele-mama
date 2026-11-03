@@ -1,5 +1,5 @@
 // Service Worker con estrategia Network-First para index.html para evitar que la página quede congelada en caché
-const CACHE_NAME = 'tele-mama-v8';
+const CACHE_NAME = 'tele-mama-v9';
 const ASSETS = [
   './manifest.json',
   './icon.svg'
