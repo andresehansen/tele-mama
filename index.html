@@ -83,19 +83,19 @@
       50% { opacity: 0.6; }
     }
 
-    /* Grilla de 2 columnas en vertical y 3 en horizontal */
+    /* Grilla de 2 columnas en vertical y 4 en horizontal (7 canales en pantalla sin scroll) */
     .channels-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       grid-auto-rows: 1fr;
-      gap: 16px;
+      gap: 14px;
       flex: 1;
     }
 
     @media (orientation: landscape) {
       .channels-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
       }
       header.app-header h1 {
         font-size: 2.6rem;
@@ -173,6 +173,9 @@
     }
     .card-canalrural {
       background: linear-gradient(135deg, #14532d 0%, #15803d 60%, #84cc16 100%);
+    }
+    .card-elnueve {
+      background: linear-gradient(135deg, #831843 0%, #be185d 55%, #f43f5e 100%);
     }
 
     /* VISTA DE REPRODUCTOR (100% NATIVO EN PÁGINA) */
@@ -332,15 +335,15 @@
 
     .channel-selector-bar {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 10px;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
       width: 100%;
     }
 
     @media (orientation: portrait) {
       .channel-selector-bar {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
       }
     }
 
@@ -486,7 +489,7 @@
     }
 
     function buildYtEmbedUrl(videoId) {
-      return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&playsinline=1`;
+      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&playsinline=1`;
     }
 
     /* ==========================================================================
@@ -557,6 +560,23 @@
             <circle cx="50" cy="50" r="28" fill="#ea580c"/>
             <circle cx="50" cy="50" r="15" fill="#facc15"/>
             <text x="50" y="88" font-family="sans-serif" font-weight="800" font-size="13" fill="#ffffff" text-anchor="middle">el trece</text>
+          </svg>
+        `
+      },
+      {
+        id: "elnueve",
+        name: "El Nueve",
+        subtitle: "Canal 9",
+        themeClass: "card-elnueve",
+        type: "youtube-live",
+        ytVideoId: "yGLVhAklLyM",
+        ytLivePageUrl: "https://www.youtube.com/@elnueve/live",
+        logoSvg: `
+          <svg viewBox="0 0 100 100">
+            <rect width="100" height="100" rx="20" fill="#9d174d"/>
+            <circle cx="50" cy="44" r="28" fill="#f43f5e"/>
+            <text x="50" y="59" font-family="sans-serif" font-weight="900" font-size="44" fill="#ffffff" text-anchor="middle">9</text>
+            <text x="50" y="88" font-family="sans-serif" font-weight="800" font-size="12" fill="#ffffff" text-anchor="middle">EL NUEVE</text>
           </svg>
         `
       },
@@ -989,7 +1009,7 @@
     // Registro de Service Worker para PWA con actualización inmediata
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=9')
+        navigator.serviceWorker.register('./sw.js?v=10')
           .then(reg => {
             console.log('PWA Service Worker registrado con éxito');
             reg.update();
