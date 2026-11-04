@@ -404,12 +404,92 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+
+    /* BANNER GIGANTE DE INSTALACIÓN EN PANTALLA PRINCIPAL (1 TOQUE) */
+    #install-banner {
+      display: none;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+
+    .btn-install-app {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: #facc15;
+      color: #000000;
+      border: 4px solid #ffffff;
+      border-radius: 22px;
+      padding: 18px 24px;
+      font-size: 1.55rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 26px rgba(250, 204, 21, 0.45);
+      text-align: center;
+      line-height: 1.2;
+      transition: transform 0.12s ease;
+    }
+
+    .btn-install-app:active {
+      transform: scale(0.97);
+      background: #eab308;
+    }
+
+    /* MODAL DE AYUDA VISUAL POR SI EL NAVEGADOR NO DISPARA EL CARTEL AUTOMÁTICO */
+    #install-help-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.92);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .install-help-box {
+      background: #1e293b;
+      border: 4px solid #facc15;
+      border-radius: 28px;
+      padding: 28px;
+      max-width: 680px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+    }
+
+    .install-help-box h2 {
+      font-size: 2rem;
+      color: #facc15;
+      margin-bottom: 18px;
+    }
+
+    .install-step {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 16px 20px;
+      margin-bottom: 14px;
+      font-size: 1.45rem;
+      font-weight: 700;
+      line-height: 1.35;
+      text-align: left;
+      color: #ffffff;
+    }
   </style>
 </head>
 <body>
 
   <!-- ==================== VISTA PRINCIPAL: GRILLA DE CANALES ==================== -->
   <main id="view-home">
+    <!-- Botón gigante para instalar como App en 1 toque (desaparece solo una vez instalada) -->
+    <div id="install-banner">
+      <button class="btn-install-app" id="btn-install-pwa">
+        📲 TOCÁ ACÁ PARA GUARDAR "MI TELE" EN TU PANTALLA
+      </button>
+    </div>
+
     <header class="app-header">
       <h1>
         📺 Mi Tele
@@ -422,6 +502,22 @@
       <!-- Generado dinámicamente -->
     </section>
   </main>
+
+  <!-- Modal explicativo gigante de respaldo si la tablet abre desde un navegador sin cartel automático -->
+  <div id="install-help-modal">
+    <div class="install-help-box">
+      <h2>📲 Cómo dejar "Mi Tele" en tu pantalla</h2>
+      <div class="install-step">
+        1️⃣ Tocá los <strong>3 puntitos (⋮)</strong> arriba de todo a la derecha de la pantalla.
+      </div>
+      <div class="install-step">
+        2️⃣ Tocá donde dice <strong>"Agregar a la pantalla principal"</strong> o <strong>"Instalar aplicación"</strong>.
+      </div>
+      <button class="btn-giant" id="btn-close-install-help" style="margin-top: 12px; width: 100%;">
+        👍 ENTENDIDO
+      </button>
+    </div>
+  </div>
 
   <!-- ==================== VISTA DE REPRODUCTOR (100% EN PÁGINA) ==================== -->
   <section id="view-player">
@@ -1006,10 +1102,63 @@
       }
     });
 
+    // BOTÓN DE INSTALACIÓN DIRECTA EN ESCRITORIO DE TABLET (PWA 1-TOQUE)
+    let deferredInstallPrompt = null;
+    const installBanner = document.getElementById("install-banner");
+    const btnInstallPwa = document.getElementById("btn-install-pwa");
+    const installHelpModal = document.getElementById("install-help-modal");
+    const btnCloseInstallHelp = document.getElementById("btn-close-install-help");
+
+    function isRunningStandalone() {
+      return window.matchMedia('(display-mode: standalone)').matches ||
+             window.navigator.standalone === true ||
+             localStorage.getItem('mi_tele_installed') === '1';
+    }
+
+    // Mostrar el botón amarillo en tablets/móviles si aún no está instalada como App
+    if (!isRunningStandalone()) {
+      installBanner.style.display = "block";
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      if (!isRunningStandalone()) {
+        installBanner.style.display = "block";
+      }
+    });
+
+    btnInstallPwa.addEventListener('click', async (e) => {
+      if (!isIntentionalTap(e)) return;
+
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        const { outcome } = await deferredInstallPrompt.userChoice;
+        if (outcome === 'accepted') {
+          localStorage.setItem('mi_tele_installed', '1');
+          installBanner.style.display = "none";
+        }
+        deferredInstallPrompt = null;
+      } else {
+        installHelpModal.style.display = "flex";
+      }
+    });
+
+    btnCloseInstallHelp.addEventListener('click', (e) => {
+      if (!isIntentionalTap(e)) return;
+      installHelpModal.style.display = "none";
+    });
+
+    window.addEventListener('appinstalled', () => {
+      localStorage.setItem('mi_tele_installed', '1');
+      installBanner.style.display = "none";
+      installHelpModal.style.display = "none";
+    });
+
     // Registro de Service Worker para PWA con actualización inmediata
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=10')
+        navigator.serviceWorker.register('./sw.js?v=11')
           .then(reg => {
             console.log('PWA Service Worker registrado con éxito');
             reg.update();
