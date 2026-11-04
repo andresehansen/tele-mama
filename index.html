@@ -548,9 +548,14 @@
       <div class="player-overlay" id="player-overlay">
         <!-- Parte Superior: Botón Volver gigante en esquina izquierda -->
         <div class="overlay-top">
-          <button class="btn-giant" id="btn-back">
-            ⬅ VOLVER
-          </button>
+          <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <button class="btn-giant" id="btn-back">
+              ⬅ VOLVER
+            </button>
+            <button class="btn-giant" id="btn-skip-ad" style="display: none; background: #38bdf8; color: #000000; font-size: 1.4rem; padding: 14px 26px;">
+              ⏭️ SALTEAR ANUNCIO
+            </button>
+          </div>
           
           <div class="current-channel-info">
             <span class="badge-live">VIVO</span>
@@ -585,11 +590,13 @@
     }
 
     function buildYtEmbedUrl(videoId) {
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&playsinline=1`;
+      // Incluye embed_config con disableAds:true (usado por los sitios oficiales de TV para desactivar anuncios preliminares en YouTube Live)
+      const embedConfig = encodeURIComponent(JSON.stringify({ adsConfig: { disableAds: true } }));
+      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&playsinline=1&embed_config=${embedConfig}`;
     }
 
     /* ==========================================================================
-       CONFIGURACIÓN DE LOS 6 CANALES VERIFICADOS EN VIVO
+       CONFIGURACIÓN DE LOS 7 CANALES VERIFICADOS EN VIVO
        ========================================================================== */
     const CHANNELS = [
       {
@@ -597,9 +604,10 @@
         name: "TN",
         subtitle: "Todo Noticias",
         themeClass: "card-tn",
-        type: "youtube-live",
-        ytVideoId: "cb12KmMMDJA",
-        ytLivePageUrl: "https://www.youtube.com/@todonoticias/live",
+        type: "hls",
+        useProxy: false, // HLS 1080p nativo directo de Artear (0% anuncios de YouTube)
+        hlsUrl: "https://live-01-01-tn.vodgc.net/TN_DAI_Beta/index.m3u8",
+        fallbackHls: "https://live-01-02-tn.vodgc.net/TN_DAI_Beta/index.m3u8",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#0b2545"/>
@@ -990,6 +998,9 @@
       iframe.src = "";
       iframe.style.display = "none";
 
+      const btnSkipAd = document.getElementById("btn-skip-ad");
+      btnSkipAd.style.display = (channel.type === "youtube-live") ? "inline-flex" : "none";
+
       if (channel.type === "youtube-live") {
         // MODO YOUTUBE EN VIVO CON AUTO-ACTUALIZACIÓN DE VIDEO_ID VÍA WORKER
         iframe.style.display = "block";
@@ -1096,6 +1107,21 @@
       }
     });
 
+    // BOTÓN GIGANTE PARA SALTEAR / QUITAR PUBLICIDAD DE YOUTUBE (RECARGA SEÑAL CON DISABLE_ADS)
+    document.getElementById("btn-skip-ad").addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (isIntentionalTap(e)) {
+        const channel = CHANNELS[currentIndex];
+        if (channel && channel.type === "youtube-live") {
+          const iframe = document.getElementById("tv-iframe");
+          showLoading("Quitando anuncio...");
+          iframe.src = buildYtEmbedUrl(channel.ytVideoId) + "&t=" + Date.now();
+          setTimeout(() => hideLoading(), 900);
+          resetOverlayTimer();
+        }
+      }
+    });
+
     window.addEventListener("popstate", () => {
       if (viewPlayer.style.display === "flex") {
         closePlayer();
@@ -1158,7 +1184,7 @@
     // Registro de Service Worker para PWA con actualización inmediata
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=11')
+        navigator.serviceWorker.register('./sw.js?v=12')
           .then(reg => {
             console.log('PWA Service Worker registrado con éxito');
             reg.update();
