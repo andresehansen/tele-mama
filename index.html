@@ -820,7 +820,6 @@
        CONFIGURACIÓN DE LOS 13 CANALES Y MULTI-FUENTES
        ========================================================================== */
     const CHANNELS = [
-      // --- AIRE Y NOTICIAS ---
       {
         id: "tn",
         number: 1,
@@ -835,11 +834,12 @@
           { label: "Artear vía Proxy IP", type: "hls", url: "https://live-01-01-tn.vodgc.net/TN_DAI_Beta/index.m3u8", useProxy: true }
         ],
         hlsUrl: "https://live-01-01-tn.vodgc.net/TN_DAI_Beta/index.m3u8",
+        fallbackHls: "https://live-01-02-tn.vodgc.net/TN_DAI_Beta/index.m3u8",
         useProxy: false,
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#0b2545"/>
-            <path d="M15 15 L85 15 L60 85 L15 85 Z" fill="#e65c00" opacity="0.35"/>
+            <path d="M15 15 L85 15 L60 85 L15 85 Z" fill="#e65c00" opacity="0.3"/>
             <text x="50" y="65" font-family="sans-serif" font-weight="900" font-size="44" fill="#ffffff" text-anchor="middle">TN</text>
           </svg>
         `
@@ -878,10 +878,9 @@
         type: "youtube-live",
         currentSourceIndex: 0,
         sources: [
-          { label: "YouTube Live Oficial", type: "youtube-live", ytVideoId: "rZtTUCxpPuI", ytLivePageUrl: "https://www.youtube.com/@c5n/live" }
+          { label: "YouTube Live Oficial 24hs", type: "youtube-live", ytVideoId: "rZtTUCxpPuI" }
         ],
         ytVideoId: "rZtTUCxpPuI",
-        ytLivePageUrl: "https://www.youtube.com/@c5n/live",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#991b1b"/>
@@ -902,6 +901,7 @@
           { label: "VodGC Directo 1080p", type: "hls", url: "https://livetrx01.vodgc.net/eltrecetv/index.m3u8", useProxy: false }
         ],
         hlsUrl: "https://livetrx01.vodgc.net/eltrecetv/index.m3u8",
+        fallbackHls: "https://live-01-01-eltrece.vodgc.net/eltrecetv/index.m3u8",
         useProxy: false,
         logoSvg: `
           <svg viewBox="0 0 100 100">
@@ -922,10 +922,9 @@
         type: "youtube-live",
         currentSourceIndex: 0,
         sources: [
-          { label: "YouTube Live Oficial", type: "youtube-live", ytVideoId: "yGLVhAklLyM", ytLivePageUrl: "https://www.youtube.com/@elnueve/live" }
+          { label: "YouTube Live Oficial", type: "youtube-live", ytVideoId: "yGLVhAklLyM" }
         ],
         ytVideoId: "yGLVhAklLyM",
-        ytLivePageUrl: "https://www.youtube.com/@elnueve/live",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#9d174d"/>
@@ -935,7 +934,6 @@
           </svg>
         `
       },
-      // CANAL 6: AMÉRICA TV — HARDWARE DECODER EN ANDROID TV (CON AUDIO COMPLETO) + YOUTUBE + REPRODUCTOR OFICIAL
       {
         id: "americatv",
         number: 6,
@@ -946,18 +944,18 @@
         type: "hls",
         currentSourceIndex: 0,
         sources: [
-          { label: "Señal Directa 720p (Audio Nativo)", type: "hls", url: "https://prepublish.f.qaotic.net/a07/americahls-100056/playlist_720p.m3u8", useProxy: false, preferNativeAndroid: true },
-          { label: "YouTube Live Oficial", type: "youtube-live", ytVideoId: "2M1_CFn9G2U", ytLivePageUrl: "https://www.youtube.com/@americatv/live" },
+          { label: "Señal Directa 720p (Audio Nativo)", type: "hls", url: "https://prepublish.f.qaotic.net/a07/americahls-100056/playlist_720p.m3u8", useProxy: true },
+          { label: "Señal Alternativa HLS", type: "hls", url: "http://45.173.231.22:8000/play/a057/index.m3u8", useProxy: true },
           { label: "Reproductor Oficial Edge-Apps", type: "embed", url: "https://vmf.edge-apps.net/embed/live.php?streamname=americahls-100056&autoplay=true" }
         ],
         hlsUrl: "https://prepublish.f.qaotic.net/a07/americahls-100056/playlist_720p.m3u8",
-        useProxy: false,
+        useProxy: true,
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#0284c7"/>
-            <polygon points="50,18 82,80 18,80" fill="#ea580c"/>
-            <circle cx="50" cy="54" r="16" fill="#facc15"/>
-            <text x="50" y="93" font-family="sans-serif" font-weight="900" font-size="12" fill="#ffffff" text-anchor="middle">AMÉRICA</text>
+            <path d="M22 68 L50 20 L78 68 Z" fill="#ea580c"/>
+            <circle cx="50" cy="54" r="11" fill="#ffffff"/>
+            <text x="50" y="88" font-family="sans-serif" font-weight="800" font-size="11" fill="#ffffff" text-anchor="middle">AMÉRICA</text>
           </svg>
         `
       },
@@ -971,15 +969,16 @@
         type: "youtube-live",
         currentSourceIndex: 0,
         sources: [
-          { label: "YouTube Live Oficial", type: "youtube-live", ytVideoId: "FEWZjXJ7M0c", ytLivePageUrl: "https://www.youtube.com/@A24com/live" }
+          { label: "YouTube Live Oficial", type: "youtube-live", ytVideoId: "ArKbAx1K-2U", ytLivePageUrl: "https://www.youtube.com/@A24com/live" }
         ],
-        ytVideoId: "FEWZjXJ7M0c",
+        ytVideoId: "ArKbAx1K-2U",
         ytLivePageUrl: "https://www.youtube.com/@A24com/live",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#1e3a8a"/>
-            <path d="M15 80 L35 24 L52 24 L70 80 L52 80 L47 62 L32 62 L27 80 Z" fill="#dc2626"/>
-            <text x="73" y="74" font-family="sans-serif" font-weight="900" font-size="34" fill="#ffffff" text-anchor="middle">24</text>
+            <rect x="18" y="24" width="64" height="34" rx="8" fill="#dc2626"/>
+            <text x="50" y="49" font-family="sans-serif" font-weight="900" font-size="24" fill="#ffffff" text-anchor="middle">A24</text>
+            <text x="50" y="84" font-family="sans-serif" font-weight="800" font-size="12" fill="#ffffff" text-anchor="middle">NOTICIAS</text>
           </svg>
         `
       },
@@ -990,14 +989,14 @@
         name: "TV Pública",
         subtitle: "Canal 7",
         themeClass: "card-tvpublica",
-        type: "youtube-live",
+        type: "hls",
         currentSourceIndex: 0,
         sources: [
-          { label: "YouTube Live Oficial", type: "youtube-live", ytVideoId: "YNApZJdaqfg", ytLivePageUrl: "https://www.youtube.com/channel/UCs231K71Bnu5295_x0MB5Pg/live" },
-          { label: "Edge-Access HLS Directo", type: "hls", url: "https://g5.vxral-hor.transport.edge-access.net/b16/ngrp:c7_vivo01_dai_source-20001_all/playlist.m3u8", useProxy: false, preferNativeAndroid: true }
+          { label: "Edge-Access HLS Directo", type: "hls", url: "https://g5.vxral-hor.transport.edge-access.net/b16/ngrp:c7_vivo01_dai_source-20001_all/playlist.m3u8", useProxy: true },
+          { label: "Reproductor Oficial Web", type: "embed", url: "https://vmf.edge-apps.net/embed/live.php?streamname=c7live01-20034&autoplay=true" }
         ],
-        ytVideoId: "YNApZJdaqfg",
-        ytLivePageUrl: "https://www.youtube.com/channel/UCs231K71Bnu5295_x0MB5Pg/live",
+        hlsUrl: "https://g5.vxral-hor.transport.edge-access.net/b16/ngrp:c7_vivo01_dai_source-20001_all/playlist.m3u8",
+        useProxy: true,
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#0369a1"/>
@@ -1017,15 +1016,16 @@
         type: "youtube-live",
         currentSourceIndex: 0,
         sources: [
-          { label: "YouTube Live Oficial", type: "youtube-live", ytVideoId: "bo-ZPthG1K0", ytLivePageUrl: "https://www.youtube.com/@lanacion/live" }
+          { label: "YouTube Live Oficial", type: "youtube-live", ytVideoId: "FEWZjXJ7M0c", ytLivePageUrl: "https://www.youtube.com/@lanacion/live" }
         ],
-        ytVideoId: "bo-ZPthG1K0",
+        ytVideoId: "FEWZjXJ7M0c",
         ytLivePageUrl: "https://www.youtube.com/@lanacion/live",
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#091e3a"/>
-            <text x="36" y="66" font-family="sans-serif" font-weight="900" font-size="42" fill="#ffffff" text-anchor="middle">LN</text>
-            <text x="76" y="66" font-family="sans-serif" font-weight="900" font-size="48" fill="#38bdf8" text-anchor="middle">+</text>
+            <text x="50" y="55" font-family="serif" font-weight="900" font-size="34" fill="#ffffff" text-anchor="middle">LN</text>
+            <text x="75" y="44" font-family="sans-serif" font-weight="900" font-size="28" fill="#38bdf8" text-anchor="middle">+</text>
+            <text x="50" y="84" font-family="sans-serif" font-weight="800" font-size="11" fill="#cbd5e1" text-anchor="middle">LA NACIÓN</text>
           </svg>
         `
       },
@@ -1046,9 +1046,9 @@
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#dc2626"/>
-            <rect x="8" y="24" width="84" height="42" rx="10" fill="#ffffff"/>
-            <text x="50" y="55" font-family="sans-serif" font-weight="900" font-size="18" fill="#dc2626" text-anchor="middle">CRONICA</text>
-            <text x="50" y="86" font-family="sans-serif" font-weight="800" font-size="13" fill="#facc15" text-anchor="middle">EN VIVO</text>
+            <rect x="14" y="24" width="72" height="34" rx="6" fill="#ffffff"/>
+            <text x="50" y="49" font-family="impact, sans-serif" font-size="22" fill="#dc2626" text-anchor="middle">CRONICA</text>
+            <text x="50" y="84" font-family="sans-serif" font-weight="800" font-size="11" fill="#facc15" text-anchor="middle">FIRME JUNTO AL PUEBLO</text>
           </svg>
         `
       },
@@ -1074,7 +1074,6 @@
           </svg>
         `
       },
-      // --- DEPORTES (100% VERIFICADOS EN REPRODUCCIÓN REAL 1080P CON AUDIO) ---
       {
         id: "tycsports",
         number: 12,
@@ -1093,8 +1092,8 @@
         logoSvg: `
           <svg viewBox="0 0 100 100">
             <rect width="100" height="100" rx="20" fill="#0c4a6e"/>
-            <text x="50" y="54" font-family="sans-serif" font-weight="900" font-size="32" fill="#ffffff" text-anchor="middle">TyC</text>
-            <text x="50" y="80" font-family="sans-serif" font-weight="800" font-size="15" fill="#38bdf8" text-anchor="middle">SPORTS</text>
+            <text x="50" y="58" font-family="sans-serif" font-weight="900" font-size="36" fill="#38bdf8" text-anchor="middle">TyC</text>
+            <text x="50" y="82" font-family="sans-serif" font-weight="800" font-size="13" fill="#ffffff" text-anchor="middle">SPORTS</text>
           </svg>
         `
       },
@@ -1114,10 +1113,10 @@
         useProxy: false,
         logoSvg: `
           <svg viewBox="0 0 100 100">
-            <rect width="100" height="100" rx="20" fill="#581c87"/>
-            <circle cx="50" cy="44" r="24" fill="#e11d48"/>
-            <text x="50" y="52" font-family="sans-serif" font-weight="900" font-size="20" fill="#ffffff" text-anchor="middle">TNT</text>
-            <text x="50" y="84" font-family="sans-serif" font-weight="900" font-size="14" fill="#ffffff" text-anchor="middle">SPORTS</text>
+            <rect width="100" height="100" rx="20" fill="#3b0764"/>
+            <circle cx="50" cy="46" r="26" fill="#701a75"/>
+            <text x="50" y="54" font-family="sans-serif" font-weight="900" font-size="18" fill="#ffffff" text-anchor="middle">TNT</text>
+            <text x="50" y="84" font-family="sans-serif" font-weight="800" font-size="11" fill="#f43f5e" text-anchor="middle">SPORTS</text>
           </svg>
         `
       }
@@ -1811,17 +1810,17 @@
     ];
 
     const CHANNEL_MATCHERS = {
-      tn: /\b(todo noticias|^tn\b|tvg-id="todonoticias)/i,
-      telefe: /\b(telefe)\b/i,
-      c5n: /\b(c5n)\b/i,
-      eltrece: /\b(el trece|eltrece|canal 13)\b/i,
-      elnueve: /\b(el nueve|elnueve|canal 9)\b/i,
-      americatv: /\b(am[eé]rica tv|americatv|tvg-id="americatv)\b/i,
-      a24: /\b(a24|am[eé]rica 24)\b/i,
-      tvpublica: /\b(tv p[uú]blica|televisi[oó]n p[uú]blica)\b/i,
-      lnmas: /\b(ln\+|la naci[oó]n)\b/i,
-      cronica: /\b(cr[oó]nica)\b/i,
-      canalrural: /\b(canal rural|el rural)\b/i,
+      tn: /^(?!.*(bahia|cordoba|santa fe)).*(todo noticias|^tn\b|tvg-id="todonoticias)/i,
+      telefe: /^(?!.*(rosario|salta|tucum[aá]n|cordoba|santa fe|neuquen|mar del plata|bahia|internacional)).*(telefe( buenos aires)?\b|tvg-id="Telefe\.ar)/i,
+      c5n: /\b(c5n)\b|tvg-id="C5N\.ar/i,
+      eltrece: /^(?!.*(san luis|la rioja|jujuy|santa fe|chile|cordoba|mendoza)).*(eltrece|el trece buenos aires|tvg-id="ElTrece\.ar)/i,
+      elnueve: /^(?!.*(litoral|link|resistencia|rio cuarto|salta|mendoza|parana|chaco)).*(el nueve|elnueve|canal 9 buenos aires|tvg-id="ElNueve\.ar)/i,
+      americatv: /^(?!.*(paraguay|peru|interior)).*(am[eé]rica tv|americatv|tvg-id="AmericaTV\.ar)/i,
+      a24: /\b(a24|am[eé]rica 24)\b|tvg-id="A24\.ar/i,
+      tvpublica: /^(?!.*(fueguina|marcos paz|catamarca|chubut|santa cruz|la pampa)).*(tv p[uú]blica|televisi[oó]n p[uú]blica|tvg-id="TelevisionPublica\.ar)/i,
+      lnmas: /\b(ln\+|la naci[oó]n\+)\b|tvg-id="LN/i,
+      cronica: /^(?!.*(musical)).*\b(cr[oó]nica|cronica tv)\b|tvg-id="Cronica/i,
+      canalrural: /\b(canal rural|el rural)\b|tvg-id="CanalRural/i,
       tycsports: /\b(tycsports\.(ar|latam|usa)|tyc\s*sports)/i,
       tntsports: /\b(tnt\s*sports|tntsports\.(ar|cl)|tntsportspremium)\b/i
     };
